@@ -4,6 +4,7 @@ template.innerHTML = `
             .container {
                 max-width: 400px;
                 display: block;
+                padding: .5em 1em;
             }
             label {
                 display: block;
@@ -11,6 +12,7 @@ template.innerHTML = `
             }
             input {
                 width: 100%;
+                padding: .4em .5em;
             }
             .row {
                 padding: 0 0 .5em 0
