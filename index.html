@@ -10,21 +10,29 @@
             padding: 0;
             margin: 0;
         }
+        *,
+        *:before,
+        *:after {
+            box-sizing: border-box;
+        }
         .container {
-            width: 440px;
+            width: 100%;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 1em;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3>DaData - подсказки по организациям, продвинутый режим</h3>
-
-        <dd-suggest-companies-advanced token="e936665b2de92b2a598e9b3afef7f71f303fffaa"></dd-suggest-companies-advanced>
-
-        <hr>
-        <p>see code: <a href="https://github.com/andyzee/dd-test">here</a></p>
+        <div class="container-inner">
+            <h3>DaData - подсказки по организациям, продвинутый режим</h3>
+            
+            <dd-suggest-companies-advanced token="e936665b2de92b2a598e9b3afef7f71f303fffaa"></dd-suggest-companies-advanced>
+            
+            <hr>
+            <p>see code: <a href="https://github.com/andyzee/dd-test">here</a></p>
+        </div>
     </div>
 
     <script src="./DDSuggestCompaniesAdvanced.js"></script>

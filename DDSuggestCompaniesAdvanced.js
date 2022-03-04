@@ -2,9 +2,7 @@ const template = document.createElement('template')
 template.innerHTML = `
         <style>
             .container {
-                max-width: 400px;
-                display: block;
-                padding: .5em 1em;
+                width: 100%;
             }
             label {
                 display: block;
@@ -13,6 +11,8 @@ template.innerHTML = `
             input {
                 width: 100%;
                 padding: .4em .5em;
+                margin: 0;
+                box-sizing: border-box;
             }
             .row {
                 padding: 0 0 .5em 0
