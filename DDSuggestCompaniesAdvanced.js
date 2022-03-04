@@ -85,8 +85,10 @@ class DDSuggestCompaniesAdvanced extends HTMLElement {
         this.el.parties.innerHTML = ""
 
         // cancel current fetch
-        if(this.fetching)
+        if(this.fetching) {
             this.fetchController.abort()
+            this.fetchController = new AbortController()
+        }
 
         // debounce clear timeout
         if(this.timeout)
@@ -94,7 +96,6 @@ class DDSuggestCompaniesAdvanced extends HTMLElement {
 
         // process data from cache
         if(this.queryCache[val]) {
-            console.log('get data from cache')
             this.data = this.queryCache[val]
             return this.processData()
         }
@@ -116,15 +117,16 @@ class DDSuggestCompaniesAdvanced extends HTMLElement {
             signal: this.fetchController.signal
         }
         this.fetching = true
-        console.log('..fetching..')
         fetch(url, options)
             .then(response => {
-                this.fetching = false; return response.json()
+                this.fetching = false 
+                return response.json()
             })
             .then(result => {
                 if(!result.suggestions || !result.suggestions.length) {
                     this.data = []
                     console.log('nothing found')
+                    this.el.type.value = 'Ничего не найдено'
                 } else {
                     this.data = result.suggestions
                     this.queryCache[val] = this.data
@@ -133,7 +135,7 @@ class DDSuggestCompaniesAdvanced extends HTMLElement {
             })
             .catch(error => {
                 this.fetching = false; 
-                console.error("error", error)
+                console.log("error", error)
             })
     }
     processData() {
@@ -172,7 +174,7 @@ class DDSuggestCompaniesAdvanced extends HTMLElement {
     connectedCallback() {
         ['party', 'parties', 'type', 'name_short', 'name_full', 'inn_kpp', 'address'].forEach((v) => this.el[v] = this.shadowRoot.querySelector(`#${v}`))
 
-        this.resultFieldNames = ['name_short', 'name_full', 'inn_kpp', 'address']
+        this.resultFieldNames = ['type', 'name_short', 'name_full', 'inn_kpp', 'address']
         
         this.el.party.addEventListener('input', () => this.handleInput())
     }
