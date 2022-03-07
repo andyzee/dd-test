@@ -21,14 +21,48 @@
             margin: 0 auto;
             padding: 0 1em;
         }
+        label {
+            display: block;
+            padding: 0 0 .2em 0
+        }
+        input {
+            width: 100%;
+            padding: .4em .5em;
+            margin: 0;
+        }
+        .row {
+            padding: 0 0 .5em 0
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="container-inner">
             <h3>DaData - подсказки по организациям, продвинутый режим</h3>
-            
-            <dd-suggest-companies-advanced token="e936665b2de92b2a598e9b3afef7f71f303fffaa"></dd-suggest-companies-advanced>
+            <div class="row">
+                <label>Компания или ИП</label>
+                <dd-suggest-companies-advanced token="e936665b2de92b2a598e9b3afef7f71f303fffaa" id="party" name="party" type="text" placeholder="Введите название организации или ИП" autocomplete="off" />
+            </div>
+            <div class="row">
+                <label>Тип</label>
+                <input id="type"></input>
+            </div>
+            <div class="row">
+                <label>Краткое наименование</label>
+                <input id="name_short">
+            </div>
+            <div class="row">
+                <label>Полное наименование</label>
+                <input id="name_full">
+            </div>
+            <div class="row">
+                <label>ИНН / КПП</label>
+                <input id="inn_kpp">
+            </div>
+            <div class="row">
+                <label>Адрес</label>
+                <input id="address">
+            </div>
             
             <hr>
             <p>see code: <a href="https://github.com/andyzee/dd-test">here</a></p>
@@ -36,5 +70,6 @@
     </div>
 
     <script src="./DDSuggestCompaniesAdvanced.js"></script>
+    <script src="./script.js"></script>
 </body>
 </html>

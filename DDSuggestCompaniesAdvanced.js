@@ -1,186 +1,138 @@
-const template = document.createElement('template')
-template.innerHTML = `
+(function() {
+
+    const template = document.createElement('template')
+    template.innerHTML = `
         <style>
-            .container {
-                width: 100%;
-            }
-            label {
-                display: block;
-                padding: 0 0 .2em 0
-            }
-            input {
-                width: 100%;
-                padding: .4em .5em;
-                margin: 0;
-                box-sizing: border-box;
-            }
-            .row {
-                padding: 0 0 .5em 0
-            }
         </style>
+    `
+            
+    class DDSuggestCompaniesAdvanced extends HTMLElement {
+        constructor() {
+            super()
+            
+            // appending input in light dom to easily style it through global stylesheets
+            this.inputField = document.createElement('input')
+            const attrs = ['name', 'placeholder', 'autocomplete']
+            attrs.forEach(a => this.getAttribute(a) ? this.inputField.setAttribute(a, this.getAttribute(a)) : '')
+            this.appendChild(this.inputField)
 
-        <div class="container">
-            <div class="row">
-                <label>Компания или ИП</label>
-                <input list="parties" id="party" name="party" type="text" placeholder="Введите название организации или ИП" autocomplete="off" />
-                <datalist id="parties"></datalist>
-            </div>
-            <div class="row">
-                <label>Тип</label>
-                <input id="type"></input>
-            </div>
-            <div class="row">
-                <label>Краткое наименование</label>
-                <input id="name_short">
-            </div>
-            <div class="row">
-                <label>Полное наименование</label>
-                <input id="name_full">
-            </div>
-            <div class="row">
-                <label>ИНН / КПП</label>
-                <input id="inn_kpp">
-            </div>
-            <div class="row">
-                <label>Адрес</label>
-                <input id="address">
-            </div>
-        </div>
-`
+            // datalist mode
+            this.dataList = document.createElement('datalist')
+            this.dataList.setAttribute('id', `dd-datalist-${Math.ceil(Math.random()*1e6)}`)
+            this.appendChild(this.dataList)
 
-class DDSuggestCompaniesAdvanced extends HTMLElement {
-    constructor() {
-        super()
+            // connect input to datalist
+            this.inputField.setAttribute('list', this.dataList.id)
 
-        this.attachShadow({mode: 'open'})
-        this.shadowRoot.appendChild(template.content.cloneNode(true))
-        this.token = this.getAttribute('token')
-        
-        this.data = []
-        this.el = {}
-        this.fetchController = new AbortController()
-        this.queryCache = []
-    }
-    handleInput() {
-        const val = this.el.party.value.trim()
-        if(val.length < 2 || this.oldVal == val)
-            return;
 
-        this.oldVal = val
+            // append shadow container, so that it doesn't interfere with input
+            this.shadowContainer = document.createElement('div')
+            this.appendChild(this.shadowContainer)
 
-        // check if the user chose from the options
-        let found = false
-        this.el.parties.querySelectorAll('option').forEach((el, i) => {
-            if(el.value == val) {
-                found = i
-                return
-            }
-        })
-        // process chosen option
-        if(found !== false)
-            return this.fillInfo(found)
+            // appending shadow dom used for suggestions popup
+            this.shadowContainer.attachShadow({mode: 'open'})
+            this.shadowContainer.shadowRoot.appendChild(template.content.cloneNode(true))
 
-        // clear fields
-        this.resultFieldNames.forEach(name => this.el[name].value = "")
-        this.el.parties.innerHTML = ""
 
-        // cancel current fetch
-        if(this.fetching) {
-            this.fetchController.abort()
+            this.token = this.getAttribute('token')
+            this.data = []
             this.fetchController = new AbortController()
+            this.queryCache = []
         }
+        handleInput() {
+            const val = this.inputField.value.trim()
+            if(val.length < 2 || this.oldVal == val) {
+                return;
+            }
 
-        // debounce clear timeout
-        if(this.timeout)
+            this.oldVal = val
+            
+            // check if the user chose from the options
+            let found = false
+            this.dataList.querySelectorAll('option').forEach((el, i) => {
+                if(el.value == val) {
+                    found = i
+                    return
+                }
+            })
+            // process chosen option
+            if(found !== false)
+                return this.fillInfo(found)
+                
+                // clear fields
+                this.dataList.innerHTML = ""
+
+                // cancel current fetch
+                if(this.fetching) {
+                    this.fetchController.abort()
+                    this.fetchController = new AbortController()
+            }
+            
+            // debounce clear timeout
+            if(this.timeout)
             clearTimeout(this.timeout)
 
-        // process data from cache
-        if(this.queryCache[val]) {
-            this.data = this.queryCache[val]
-            return this.processData()
+            // process data from cache
+            if(this.queryCache[val]) {
+                this.data = this.queryCache[val]
+                return this.processData()
+            }
+            
+            // request data with debounce
+            this.timeout = setTimeout(() => this.getData(val), 200)
         }
-
-        // request data with debounce
-        this.timeout = setTimeout(() => this.getData(val), 200)
-    }
-    getData(val) {
-        const url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
-        const options = {
-            method: "POST",
-            mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": "Token " + this.token
-            },
-            body: JSON.stringify({query: val}),
-            signal: this.fetchController.signal
-        }
-        this.fetching = true
-        fetch(url, options)
+        getData(val) {
+            const url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
+            const options = {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": "Token " + this.token
+                },
+                body: JSON.stringify({query: val}),
+                signal: this.fetchController.signal
+            }
+            this.fetching = true
+            fetch(url, options)
             .then(response => {
                 this.fetching = false 
                 return response.json()
             })
-            .then(result => {
-                if(!result.suggestions || !result.suggestions.length) {
-                    this.data = []
-                    console.log('nothing found')
-                    this.el.type.value = 'Ничего не найдено'
-                } else {
-                    this.data = result.suggestions
-                    this.queryCache[val] = this.data
-                    this.processData()
-                }
-            })
-            .catch(error => {
-                this.fetching = false; 
-                console.log("error", error)
-            })
-    }
-    processData() {
-        this.data.forEach(i => {
-            const option = document.createElement('option')
-            option.setAttribute('value', i.value)
-            this.el.parties.appendChild(option)
-        })    
-    }
-    fillInfo(i) {
-        const data = this.data[i].data
-        console.log(data)
-        
-        this.el.type.value = `${this.getPartyTypeDescription(data.type)} (${data.type})`
-        this.el.name_short.value = data.name.short_with_opf || ''
-        this.el.name_full.value = data.name.full_with_opf || ''
-        this.el.inn_kpp.value = [data.inn, data.kpp].join(' / ')
-        if (data.address) {
-            let address = '';
-            if (data.address.data.qc == '0') {
-                address = [data.address.data.postal_code, data.address.value].join();
-            } else {
-                address = data.address.data.source;
+                .then(result => {
+                    if(!result.suggestions || !result.suggestions.length) {
+                        this.data = []
+                        console.log('nothing found')
+                        this.el.type.value = 'Ничего не найдено'
+                    } else {
+                        this.data = result.suggestions
+                        this.queryCache[val] = this.data
+                        this.processData()
+                    }
+                })
+                .catch(error => {
+                    this.fetching = false; 
+                    console.log("error", error)
+                })
             }
-            this.el.address.value = address
+        processData() {
+            this.data.forEach(i => {
+                const option = document.createElement('option')
+                option.setAttribute('value', i.value)
+                this.dataList.appendChild(option)
+            })    
         }
-
-    }
-    getPartyTypeDescription(type) {
-        const types = {
-            'INDIVIDUAL': 'Индивидуальный предприниматель',
-            'LEGAL': 'Организация'
-        }
-        return types[type]
-    }
-    connectedCallback() {
-        ['party', 'parties', 'type', 'name_short', 'name_full', 'inn_kpp', 'address'].forEach((v) => this.el[v] = this.shadowRoot.querySelector(`#${v}`))
-
-        this.resultFieldNames = ['type', 'name_short', 'name_full', 'inn_kpp', 'address']
         
-        this.el.party.addEventListener('input', () => this.handleInput())
-    }
-    disconnectedCallback() {
+        connectedCallback() {
+            this.inputField.addEventListener('input', () => this.handleInput())
+        }
 
+        disconnectedCallback() {
+            this.inputField.removeEventListener()
+        }
     }
-}
 
-window.customElements.define('dd-suggest-companies-advanced', DDSuggestCompaniesAdvanced)
+    window.customElements.define('dd-suggest-companies-advanced', DDSuggestCompaniesAdvanced)
+
+})()
